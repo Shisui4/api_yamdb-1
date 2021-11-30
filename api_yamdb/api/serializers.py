@@ -1,7 +1,19 @@
 from django.db.models import fields
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from reviews.models import Review
+from reviews.models import Review, User
+
+class UserSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        model = User
+
+    def validate_username(self, name):
+        if name == 'me':
+            raise serializers.ValidationError(
+                'Это имя не может быть использовано!')
+        return name 
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -34,3 +46,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 # Другой способ доступа к идентификатору объекта-это доступ к kwargs view объекту из context словаря сериализатора.
 # my_view = self.context['view'] # get the 'view' object from serializer context
 # object_id = my_view.kwargs.get('pk') # access the 'view' kwargs and lookup for 'pk'
+
+
+
