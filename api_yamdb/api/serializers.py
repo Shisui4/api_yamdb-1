@@ -1,10 +1,9 @@
 from rest_framework import serializers
-
-from reviews.models import User
-
+from rest_framework.relations import SlugRelatedField
+from reviews.models import Review, User
 
 class UserSerializer(serializers.ModelSerializer):
-
+    
     class Meta:
         fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
         model = User
@@ -14,3 +13,31 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Это имя не может быть использовано!')
         return name 
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Review"""
+    author = SlugRelatedField(
+        default = serializers.CurrentUserDefault(),
+        read_only = True,
+        slug_field = 'username'
+    )
+    title = SlugRelatedField(
+        read_only = True,
+        slug_field = 'name'
+    )
+
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+        def validate(self, data):
+            if self.context['request'].method == 'POST':
+                user = self.context['request'].user
+                title_id = self.context['view'].kwargs.get('title.id')
+                if Review.objects.filter(author=user, title_id=title_id):
+                    raise serializers.ValidationError('Отзыв уже оставлен')
+            return data
+
+
+
