@@ -6,8 +6,3 @@ from .views import UserList, UserDetail
 
 router = DefaultRouter()
 
-
-urlpatterns = [
-    
-]
-
