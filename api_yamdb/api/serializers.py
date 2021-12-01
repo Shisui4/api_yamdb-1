@@ -3,9 +3,11 @@ from rest_framework.relations import SlugRelatedField
 from reviews.models import Review, User, Comment
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
+FORBIDDEN_NAME = 'Это имя не может быть использовано!'
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели пользователя"""
 
     class Meta:
         fields = (
@@ -19,10 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, name):
         if name == 'me':
-            raise serializers.ValidationError(
-                'Это имя не может быть использовано!')
-        return name
-
+            raise serializers.ValidationError(FORBIDDEN_NAME)
+        return name 
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
