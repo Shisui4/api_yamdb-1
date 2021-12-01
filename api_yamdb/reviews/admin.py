@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Review, User
+from .models import Review, User, Comment
+
 
 class UserAdmin(admin.ModelAdmin):
     list_display = (
@@ -30,5 +31,18 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ('title', 'text',)
 
 
+class CommentAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'review',
+        'text',
+        'author',
+        'pub_date'
+    )
+    list_editable = ('text',)
+    search_fields = ('review', 'text',)
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Review, ReviewAdmin)
+admin.site.register(Comment, CommentAdmin)
