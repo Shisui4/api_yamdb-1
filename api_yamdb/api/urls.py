@@ -1,14 +1,13 @@
-from django.urls import include, path
+from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
 
-from .views import UserList, UserDetail
+from .views import UserViewSet
 
 
 router = DefaultRouter()
+router.register('users', UserViewSet)
 
-<<<<<<< HEAD
-=======
+
 urlpatterns = [
-    
+    path('v1/', include(router.urls)),
 ]
->>>>>>> master
