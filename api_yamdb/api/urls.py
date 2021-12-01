@@ -6,3 +6,9 @@ from .views import UserList, UserDetail
 
 router = DefaultRouter()
 
+<<<<<<< HEAD
+=======
+urlpatterns = [
+    
+]
+>>>>>>> master
