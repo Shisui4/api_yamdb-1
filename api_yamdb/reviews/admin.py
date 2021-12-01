@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User
+from .models import Review, User, Comment
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -17,4 +17,32 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'role')
     empty_value_display = '-пусто-'
 
-admin.site.register(User, UserAdmin) 
+
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'title',
+        'text',
+        'author',
+        'score',
+        'pub_date'
+    )
+    list_editable = ('text',)
+    search_fields = ('title', 'text',)
+
+
+class CommentAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'review',
+        'text',
+        'author',
+        'pub_date'
+    )
+    list_editable = ('text',)
+    search_fields = ('review', 'text',)
+
+
+admin.site.register(User, UserAdmin)
+admin.site.register(Review, ReviewAdmin)
+admin.site.register(Comment, CommentAdmin)
