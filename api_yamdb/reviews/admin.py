@@ -27,7 +27,7 @@ class ReviewAdmin(admin.ModelAdmin):
         'pub_date'
     )
     list_editable = ('text',)
-    search_fields = ('author', 'text')
+    search_fields = ('title', 'text',)
 
 
 admin.site.register(User, UserAdmin)

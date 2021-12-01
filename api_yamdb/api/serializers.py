@@ -1,4 +1,3 @@
-from django.db.models import fields
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from reviews.models import Review, User
@@ -39,13 +38,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 if Review.objects.filter(author=user, title_id=title_id):
                     raise serializers.ValidationError('Отзыв уже оставлен')
             return data
-
-
-
-
-# Другой способ доступа к идентификатору объекта-это доступ к kwargs view объекту из context словаря сериализатора.
-# my_view = self.context['view'] # get the 'view' object from serializer context
-# object_id = my_view.kwargs.get('pk') # access the 'view' kwargs and lookup for 'pk'
 
 
 
