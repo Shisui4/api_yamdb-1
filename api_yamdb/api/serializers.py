@@ -90,7 +90,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         def validate(self, data):
             if self.context['request'].method == 'POST':
                 user = self.context['request'].user
-                title_id = self.context['view'].kwargs.get('title.id')
+                title_id = self.context['view'].kwargs.get('title_id')
                 if Review.objects.filter(author=user, title_id=title_id):
                     raise serializers.ValidationError(NOT_ALLOWED)
             return data
