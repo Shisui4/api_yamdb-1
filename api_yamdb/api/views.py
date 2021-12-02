@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
+
 from reviews.models import User
 
 from .serializers import UserSerializer

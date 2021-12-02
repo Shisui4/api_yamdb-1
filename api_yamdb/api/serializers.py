@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from reviews.models import Categories, Comment, Genre, Review, Title, User
+import datetime as dt
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
@@ -39,17 +40,6 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
 
 
-class TitleViewSerializer(serializers.ModelSerializer):
-
-    genre = GenreSerializer(many=True, read_only=True)
-    category = CategoriesSerializer(read_only=True)
-
-    class Meta:
-        fields = ('id', 'name', 'release', 'description',
-                  'genre', 'category')
-        meta = Title
-
-
 class TitleCreateSerializer(serializers.ModelSerializer):
 
     category = serializers.SlugRelatedField(
@@ -57,6 +47,7 @@ class TitleCreateSerializer(serializers.ModelSerializer):
         queryset=Categories.objects.all()
     )
     genre = serializers.SlugRelatedField(
+        many=True,
         slug_field='slug',
         queryset=Genre.objects.all()
     )
@@ -64,6 +55,20 @@ class TitleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
+
+    def validate_release(self, value):
+        year = dt.date.today().year
+        if year < value:
+            raise serializers.ValidationError(
+                'Год не может быть больше текущего')
+        return value
+
+    def validate_genre(self, value):
+        genre = Genre.objects.all()
+        if value not in genre:
+            raise serializers.ValidationError(
+                'Выбраный жанр не входит в предоставленный список')
+        return value
 
 
 class ReviewSerializer(serializers.ModelSerializer):
