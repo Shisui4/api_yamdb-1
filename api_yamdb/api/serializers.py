@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from reviews.models import Review, User
@@ -18,6 +20,20 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(FORBIDDEN_NAME)
         return name 
 
+
+class SignUpSerializer(serializers.ModelSerializer):
+    """ Сериализатор для регистрации и создания нового пользователя."""
+    
+    class Meta:
+        fields = ('email', 'username')
+        model = User
+
+    def save(self):
+        email = self.validated_data['email']
+        username = self.validated_data['username']
+        confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
+        User.objects.create(username=username, email=email, confirmation_code=confirmation_code)
+        #send_email(from=email, message=confirmation_code)           
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
