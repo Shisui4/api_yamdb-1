@@ -1,11 +1,15 @@
 import uuid
 
+from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
+
 from reviews.models import Review, User
 
-
+NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
+from_email = 'from@yamdb.com'
+subject = 'confirmation code'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,19 +25,29 @@ class UserSerializer(serializers.ModelSerializer):
         return name 
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+'''class SignUpSerializer(serializers.ModelSerializer):
     """ Сериализатор для регистрации и создания нового пользователя."""
     
     class Meta:
         fields = ('email', 'username')
         model = User
 
-    def save(self):
-        email = self.validated_data['email']
-        username = self.validated_data['username']
+    def create(self, validated_data):
+        email = validated_data['email']
+        user, status = User.objects.get_or_create(**validated_data)   
         confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        User.objects.create(username=username, email=email, confirmation_code=confirmation_code)
-        #send_email(from=email, message=confirmation_code)           
+        send_mail(
+            subject=subject,
+            message=confirmation_code,
+            from_email=from_email,
+            recipient_list=[email])
+        return user'''
+
+class SignUpSerializer(serializers.Serializer):
+    
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=150)
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
@@ -56,7 +70,7 @@ class ReviewSerializer(serializers.ModelSerializer):
                 user = self.context['request'].user
                 title_id = self.context['view'].kwargs.get('title.id')
                 if Review.objects.filter(author=user, title_id=title_id):
-                    raise serializers.ValidationError('Отзыв уже оставлен')
+                    raise serializers.ValidationError(NOT_ALLOWED)
             return data
 
 

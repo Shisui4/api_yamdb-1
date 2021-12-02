@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from reviews.models import User
 from .serializers import SignUpSerializer, UserSerializer
 
+from_email = 'from@yamdb.com'
+subject = 'confirmation code'
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -20,21 +23,28 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
-    def create(self, validated_data):
-        email = validated_data['email']
-        confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        user = User.objects.create(**validated_data, confirmation_code=confirmation_code)
-        return user
 
-
+"""@api_view(['POST'])
+def sign_up(request):
+    serializer =SignUpSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_200_OK)
+"""
 @api_view(['POST'])
 def sign_up(request):
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid:
-        email = serializer.validated_data['email']
-        username = serializer.validated_data['username']
-        user, status = User.objects.get_or_create(**serializer.validated_data)
-        send_mail(message=user.confirmation_code, recipient_list=[email])           
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+    serializer =SignUpSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+    if not User.objects.filter(email=email).exists():
+        user = User.objects.create(**validated_data)   
+    confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
+    send_mail(
+        subject=subject,
+        message=confirmation_code,
+        from_email=from_email,
+        recipient_list=[email])
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+     
