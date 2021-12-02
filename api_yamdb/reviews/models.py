@@ -20,14 +20,51 @@ class User(AbstractUser):
         choices=(('moderator', 'm'), ('admin', 'a'), ('user', 'u')),
         default='user'
     )
-    confirmation_code = models.BooleanField(default=False)
+    confirmation_code = models.CharField(max_length=255)
 
     def __str__(self):
         return self.username
 
 
+class Categories(models.Model):
+    name = models.CharField(max_length=20,
+                            verbose_name='Категория',
+                            unique=True)
+    slug = models.SlugField(max_length=20,
+                            unique=True)
+
+    def __str__(self):
+        return self.slug
+
+
+class Genre(models.Model):
+    name = models.CharField(max_length=20,
+                            verbose_name='Жанр',
+                            unique=True)
+    slug = models.SlugField(max_length=20,
+                            unique=True,
+                            )
+
+    def __str__(self):
+        return self.slug
+
+
 class Title(models.Model):
-    pass
+    name = models.CharField(max_length=50,)
+    release = models.IntegerField('Дата выпуска')
+    description = models.TextField(max_length=200)
+    genre = models.ManyToManyField(Genre,
+                                   blank=True,
+                                   null=True)
+    categories = models.ForeignKey(
+        Categories,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
