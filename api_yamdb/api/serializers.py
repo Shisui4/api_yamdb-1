@@ -26,15 +26,15 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
     def create(self, validated_data):
-        email = validated_data['email']        
+        email = validated_data['email']
         confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        User.objects.create(**validated_data, confirmation_code=confirmation_code)
+        user = User.objects.create(**validated_data, confirmation_code=confirmation_code)
+        return user
 
     def validate_username(self, name):
         if name == 'me':
             raise serializers.ValidationError(FORBIDDEN_NAME)
         return name
-<<<<<<< Updated upstream
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
@@ -51,7 +51,7 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
 
 
-class TitleCreateSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
 
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -81,9 +81,6 @@ class TitleCreateSerializer(serializers.ModelSerializer):
                 'Выбраный жанр не входит в предоставленный список')
         return value
 
-=======
-        
->>>>>>> Stashed changes
 
 class SignUpSerializer(serializers.ModelSerializer):
     """ Сериализатор для регистрации и создания нового пользователя."""
@@ -103,11 +100,6 @@ class SignUpSerializer(serializers.ModelSerializer):
             recipient_list=[email])
         return user
 
-"""class SignUpSerializer(serializers.Serializer):
-    
-    email = serializers.EmailField()
-    username = serializers.CharField(max_length=150)
-"""
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
