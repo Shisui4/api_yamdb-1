@@ -15,6 +15,7 @@ subject = 'confirmation code'
 
 
 class UserSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(read_only=True, default='user')
    
     class Meta:
         fields = (

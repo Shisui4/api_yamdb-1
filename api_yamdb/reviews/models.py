@@ -17,8 +17,12 @@ class User(AbstractUser):
     role = models.CharField(
         'Статус пользователя',
         max_length=20,
-        choices=(('moderator', 'm'), ('admin', 'a'), ('user', 'u')),
-        default='user'
+        choices=(
+            ('moderator', 'moderator'),
+            ('admin', 'admin'),
+            ('user', 'user')),
+        blank=True,
+        null=True
     )
     confirmation_code = models.CharField(max_length=255)
 

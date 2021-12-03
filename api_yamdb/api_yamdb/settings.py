@@ -69,8 +69,8 @@ DATABASES = {
     }
 }
 
-#User Model
-AUTH_USER_MODEL = 'reviews.User' 
+# User Model
+AUTH_USER_MODEL = 'reviews.User'
 
 # Password validation
 
@@ -119,7 +119,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
-} 
+}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=5),

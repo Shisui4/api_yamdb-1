@@ -8,11 +8,12 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Categories, Genre, Title, Review, User
-from .permissions import IsAdmimOrIsSelf
+from .permissions import IsAdmin, IsAdminOrIsSelf, IsAdminOrReadOnly, IsModerator
 from .serializers import CommentSerializer, GenreSerializer, CategoriesSerializer
 from .serializers import ReviewSerializer, AuthenticationSerializer, UserSerializer
 
@@ -24,15 +25,16 @@ subject = 'confirmation code'
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAdmin,)
     lookup_field = 'username'
+    pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
     def get_permissions(self):
         if self.action == 'set_profile':
-            return (IsAdmimOrIsSelf(),)
-        return super().get_permissions() 
+            return (IsAdminOrIsSelf(),)
+        return super().get_permissions()
 
     @action(methods=['get','patch'], detail=False, url_path='me')
     def set_profile(self, request, pk=None):
@@ -59,7 +61,7 @@ def sign_up(request):
         message=confirmation_code,
         from_email=from_email,
         recipient_list=[email])
-    
+
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -80,6 +82,7 @@ def get_token(request):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = (IsModerator,)
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -95,6 +98,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = (IsModerator,)
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
@@ -110,6 +114,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    #pagination_class = PageNumberPagination
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('slug',)
@@ -117,6 +123,8 @@ class GenreViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    #pagination_class = PageNumberPagination
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('slug',)
