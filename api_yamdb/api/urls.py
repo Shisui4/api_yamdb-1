@@ -2,11 +2,11 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .views import sign_up, CommentViewSet, ReviewViewSet, UserViewSet
+from .views import sign_up, get_token, CommentViewSet, ReviewViewSet, UserViewSet
 from .views import CategoriesViewSet, GenreViewSet
 
 router = DefaultRouter()
-router.register('users', UserViewSet, basename='users')
+router.register(r'users', UserViewSet)
 router.register('categories', CategoriesViewSet, basename='categories')
 router.register('genres', GenreViewSet, basename='genres')
 #router.register('titles', GenreViewSet, basename='titles')
@@ -23,5 +23,5 @@ router.register(
 urlpatterns = [
     path('v1/', include(router.urls)),
     path('v1/auth/signup/', sign_up, name='signup'),
-    #path('v1/auth/token/', get_token,  name='token'),
+    path('v1/auth/token/', get_token,  name='token'),
 ]

@@ -1,6 +1,5 @@
 import uuid
 
-from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from reviews.models import Categories, Comment, Genre, Review, Title, User
@@ -8,13 +7,15 @@ import datetime as dt
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
+MISSING_EMAIL = 'Для авторизации требуется ввести электронную почту'
+MISSING_USERNAME = 'Для аутентификации требуется ввести имя пользователя'
+MISSING_CODE = 'Для аутентификации требуется ввести код подтверждения'
 from_email = 'from@yamdb.com'
 subject = 'confirmation code'
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели пользователя"""
-
+   
     class Meta:
         fields = (
             'username',
@@ -24,6 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role')
         model = User
+        lookup_field = 'username'
 
     def create(self, validated_data):
         email = validated_data['email']
@@ -34,7 +36,28 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, name):
         if name == 'me':
             raise serializers.ValidationError(FORBIDDEN_NAME)
+        elif name is None or name == "":
+            raise serializers.ValidationError(MISSING_USERNAME)
         return name
+
+    def validate_email(self, email):
+        if email is None or email == "":
+            raise serializers.ValidationError(MISSING_EMAIL)
+        return email
+
+
+class AuthenticationSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    confirmation_code = serializers.CharField(max_length=255)
+
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+        if username is None:
+            raise serializers.ValidationError(MISSING_USERNAME)
+        if confirmation_code is None:
+            raise serializers.ValidationError(MISSING_CODE)
+        return data
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
@@ -80,25 +103,6 @@ class TitleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Выбраный жанр не входит в предоставленный список')
         return value
-
-
-class SignUpSerializer(serializers.ModelSerializer):
-    """ Сериализатор для регистрации и создания нового пользователя."""
-    
-    class Meta:
-        fields = ('email', 'username')
-        model = User
-
-    def create(self, validated_data):
-        email = validated_data['email']
-        user, status = User.objects.get_or_create(**validated_data)   
-        confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        send_mail(
-            subject=subject,
-            message=confirmation_code,
-            from_email=from_email,
-            recipient_list=[email])
-        return user
 
 
 class ReviewSerializer(serializers.ModelSerializer):
