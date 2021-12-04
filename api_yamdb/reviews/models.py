@@ -55,7 +55,7 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField(max_length=50,)
-    release = models.IntegerField('Дата выпуска')
+    year = models.IntegerField('Дата выпуска')
     description = models.TextField(max_length=200)
     genre = models.ManyToManyField(Genre,
                                    blank=True,

@@ -77,7 +77,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
 
-    category = serializers.SlugRelatedField(
+    categories = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Categories.objects.all()
     )
@@ -86,12 +86,13 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all()
     )
+    #rating = serializers.SerializerMethodField()
 
     class Meta:
         fields = '__all__'
         model = Title
 
-    def validate_release(self, value):
+    def validate_year(self, value):
         year = dt.date.today().year
         if year < value:
             raise serializers.ValidationError(
@@ -113,14 +114,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-    title = SlugRelatedField(
-        read_only=True,
-        slug_field='name'
-    )
-
+   
     class Meta:
         model = Review
-        fields = '__all__'
+        exclude = ('title',)
 
         def validate(self, data):
             if self.context['request'].method == 'POST':
