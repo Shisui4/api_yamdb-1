@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from reviews.models import Categories, Comment, Genre, Review, Title, User
@@ -5,11 +7,16 @@ import datetime as dt
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
+MISSING_EMAIL = 'Для авторизации требуется ввести электронную почту'
+MISSING_USERNAME = 'Для аутентификации требуется ввести имя пользователя'
+MISSING_CODE = 'Для аутентификации требуется ввести код подтверждения'
+from_email = 'from@yamdb.com'
+subject = 'confirmation code'
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели пользователя"""
-
+    role = serializers.CharField(read_only=True, default='user')
+   
     class Meta:
         fields = (
             'username',
@@ -19,11 +26,39 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role')
         model = User
+        lookup_field = 'username'
+
+    def create(self, validated_data):
+        email = validated_data['email']
+        confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
+        user = User.objects.create(**validated_data, confirmation_code=confirmation_code)
+        return user
 
     def validate_username(self, name):
         if name == 'me':
             raise serializers.ValidationError(FORBIDDEN_NAME)
+        elif name is None or name == "":
+            raise serializers.ValidationError(MISSING_USERNAME)
         return name
+
+    def validate_email(self, email):
+        if email is None or email == "":
+            raise serializers.ValidationError(MISSING_EMAIL)
+        return email
+
+
+class AuthenticationSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    confirmation_code = serializers.CharField(max_length=255)
+
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+        if username is None:
+            raise serializers.ValidationError(MISSING_USERNAME)
+        if confirmation_code is None:
+            raise serializers.ValidationError(MISSING_CODE)
+        return data
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
@@ -40,9 +75,9 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
 
 
-class TitleCreateSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
 
-    category = serializers.SlugRelatedField(
+    categories = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Categories.objects.all()
     )
@@ -51,12 +86,13 @@ class TitleCreateSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all()
     )
+    #rating = serializers.SerializerMethodField()
 
     class Meta:
         fields = '__all__'
         model = Title
 
-    def validate_release(self, value):
+    def validate_year(self, value):
         year = dt.date.today().year
         if year < value:
             raise serializers.ValidationError(
@@ -78,14 +114,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-    title = SlugRelatedField(
-        read_only=True,
-        slug_field='name'
-    )
-
+   
     class Meta:
         model = Review
-        fields = '__all__'
+        exclude = ('title',)
 
         def validate(self, data):
             if self.context['request'].method == 'POST':
