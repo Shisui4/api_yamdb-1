@@ -45,7 +45,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get','patch'], detail=False, url_path='me')
     def set_profile(self, request, pk=None):
-        print(request.user.username)
         user = get_object_or_404(User, pk=request.user.id)
         serializer = UserSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

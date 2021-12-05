@@ -2,7 +2,7 @@ import uuid
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.models import Category, Comment, Genre, Review, Title, User, CHOICES
 import datetime as dt
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
@@ -14,8 +14,11 @@ from_email = 'from@yamdb.com'
 subject = 'confirmation code'
 
 
+#class RoleField(serializers.Field):
+
+
 class UserSerializer(serializers.ModelSerializer):
-    #role = serializers.CharField(read_only=True, default='user')
+    role = serializers.ChoiceField(choices=CHOICES, default='user')
    
     class Meta:
         fields = (
@@ -26,10 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role')
         model = User
-        """lookup_field = 'id'
-        extra_kwargs = {
-            'url': {'lookup_field': 'id'}
-        }"""
+        
 
     def create(self, validated_data):
         email = validated_data['email']

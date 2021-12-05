@@ -3,6 +3,13 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+CHOICES = (
+        ('admin', 'admin'),
+        ('moderator', 'moderator'),
+        ('user', 'user'),
+)
+
+
 class User(AbstractUser):
     first_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(
@@ -18,10 +25,7 @@ class User(AbstractUser):
     role = models.CharField(
         'Статус пользователя',
         max_length=20,
-        choices=(
-            ('moderator', 'moderator'),
-            ('admin', 'admin'),
-            ('user', 'user')),
+        choices=CHOICES,
         default='user',
         blank=True,
         null=True
