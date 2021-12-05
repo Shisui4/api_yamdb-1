@@ -47,12 +47,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def set_profile(self, request, pk=None):
         print(request.user.username)
         user = get_object_or_404(User, pk=request.user.id)
-        serializer = UserSerializer(user)
-        if request.method == 'PATCH':
-            serializer = UserSerializer(data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -95,7 +92,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (DjangoFilterBackend,)
-    filters_fields = ('category', 'genre', 'name', 'slug')
+    filters_fields = ('category', 'genre__slug', 'name', 'slug')
 
     def get_permissions(self):
         if self.action == 'list':
