@@ -71,11 +71,11 @@ class TitleAdmin(admin.ModelAdmin):
         'name',
         'year',
         'description',
-        'categories',
+        'category',
     )
 
-    list_editable = ('name', 'description', 'categories', 'year')
-    search_fields = ('name', 'year', 'genre', 'categories')
+    list_editable = ('name', 'description', 'category', 'year')
+    search_fields = ('name', 'year', 'genre', 'category')
 
 
 admin.site.register(User, UserAdmin)

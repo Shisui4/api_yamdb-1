@@ -1,5 +1,6 @@
 import uuid
 
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -44,14 +45,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get','patch'], detail=False, url_path='me')
     def set_profile(self, request, pk=None):
-        user = request.user
-        if request.method == 'PATCH':
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user.set_profile(**serializer.validated_data)
-            user.save()
+        print(request.user.username)
+        user = get_object_or_404(User, pk=request.user.id)
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        if request.method == 'PATCH':
+            serializer = UserSerializer(data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -88,9 +90,9 @@ def get_token(request):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).all()
     serializer_class = TitleSerializer
-    lookup_field = 'slug'
     permission_classes = (IsAdmin,)
     filter_backends = (DjangoFilterBackend,)
     filters_fields = ('category', 'genre', 'name', 'slug')
