@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Categories, Comment, Genre, Review, Title, User
+from .models import Category, Comment, Genre, Review, Title, User
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -54,7 +54,7 @@ class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug')
 
 
-class CategoriesAdmin(admin.ModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'name',
@@ -82,5 +82,5 @@ admin.site.register(User, UserAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(Genre, GenreAdmin)
-admin.site.register(Categories, CategoriesAdmin)
+admin.site.register(Category, CategoryAdmin)
 admin.site.register(Title, TitleAdmin)

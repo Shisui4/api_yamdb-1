@@ -3,23 +3,30 @@ import uuid
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-from rest_framework import status
-from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Categories, Genre, Title, Review, User
-from .permissions import IsAdmin, IsSelf, IsAdminOrReadOnly, IsModerator
-from .serializers import CommentSerializer, GenreSerializer, CategoriesSerializer
+from reviews.models import Category, Genre, Title, Review, User
+from .permissions import IsAdmin, IsModerator
+from .serializers import CommentSerializer, GenreSerializer, CategorySerializer
 from .serializers import AuthenticationSerializer, ReviewSerializer, UserSerializer
 from .serializers import TitleSerializer
 
 
 from_email = 'from@yamdb.com'
 subject = 'confirmation code'
+
+
+class ListCreateDestroyViewSet(mixins.CreateModelMixin,
+                               mixins.DestroyModelMixin,
+                               mixins.ListModelMixin,
+                               viewsets.GenericViewSet):
+
+    pass
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -32,19 +39,19 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'set_profile':
-            return (IsSelf(),)
+            return (IsAuthenticated(),)
         return super().get_permissions()
 
     @action(methods=['get','patch'], detail=False, url_path='me')
     def set_profile(self, request, pk=None):
         user = request.user
-        serializer = UserSerializer(user)
         if request.method == 'PATCH':
             serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                user.set_profile(**serializer.validated_data)
-                user.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer.is_valid(raise_exception=True)
+            user.set_profile(**serializer.validated_data)
+            user.save()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -53,10 +60,9 @@ def sign_up(request):
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
     username = serializer.validated_data['username']
-    user, created = User.objects.get_or_create(**serializer.validated_data)
-    if not created:
-        user.confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        user.save()
+    confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
+    user, created = User.objects.get_or_create(**serializer.validated_data, confirmation_code=confirmation_code)
+    print(user.confirmation_code)
     send_mail(
         subject=subject,
         message=user.confirmation_code,
@@ -72,11 +78,8 @@ def get_token(request):
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data['username']
     confirmation_code = serializer.validated_data['confirmation_code']
-    user = User.objects.filter(
-        username=serializer.validated_data['username'],
-        confirmation_code=serializer.validated_data['confirmation_code']
-    ).first()
-    if not user:
+    user = get_object_or_404(User, username=username)
+    if confirmation_code != user.confirmation_code:
         return Response(status=status.HTTP_400_BAD_REQUEST)
     refresh = RefreshToken.for_user(user)
     token = str(refresh.access_token)
@@ -87,9 +90,15 @@ def get_token(request):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+    lookup_field = 'slug'
     permission_classes = (IsAdmin,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('category', 'genre', 'name', 'year')
+    filter_backends = (DjangoFilterBackend,)
+    filters_fields = ('category', 'genre', 'name', 'slug')
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
+        return super().get_permissions()
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -103,9 +112,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title_id = int(self.kwargs.get('title_id'))
-        title = get_object_or_404(Title, id=title_id)
+        title = get_object_or_404(Title, pk=title_id)
         user = self.request.user
         serializer.save(author=user, title=title)
+
+    def get_permissions(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return (AllowAny(),)
+        return super().get_permissions()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -123,18 +137,29 @@ class CommentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         serializer.save(author=user, review=review)
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdmin,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-class CategoriesViewSet(viewsets.ModelViewSet):
-    queryset = Categories.objects.all()
-    serializer_class = CategoriesSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
+        return super().get_permissions()
+
+
+class CategoryViewSet(ListCreateDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdmin,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
+        return super().get_permissions()

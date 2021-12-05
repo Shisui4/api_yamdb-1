@@ -2,7 +2,7 @@ import uuid
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from reviews.models import Categories, Comment, Genre, Review, Title, User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 import datetime as dt
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
@@ -15,7 +15,7 @@ subject = 'confirmation code'
 
 
 class UserSerializer(serializers.ModelSerializer):
-    role = serializers.CharField(read_only=True, default='user')
+    #role = serializers.CharField(read_only=True, default='user')
    
     class Meta:
         fields = (
@@ -61,11 +61,11 @@ class AuthenticationSerializer(serializers.Serializer):
         return data
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
-        model = Categories
+        model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -76,21 +76,21 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-
-    categories = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Categories.objects.all()
-    )
-    genre = serializers.SlugRelatedField(
-        many=True,
-        slug_field='slug',
-        queryset=Genre.objects.all()
-    )
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
     #rating = serializers.SerializerMethodField()
 
     class Meta:
         fields = '__all__'
         model = Title
+
+    def create(self, validated_data):
+        genre = validated_data.pop('genre')
+        title = Title.objects.create(**validated_data)
+        for genre in genres:
+            TitleGenre.objects.create(
+                title=title, genre=genre)
+        return title 
 
     def validate_year(self, value):
         year = dt.date.today().year
@@ -103,12 +103,23 @@ class TitleSerializer(serializers.ModelSerializer):
         genre = Genre.objects.all()
         if value not in genre:
             raise serializers.ValidationError(
-                'Выбраный жанр не входит в предоставленный список')
+                'Выбраный жанр не входит в представленный список')
         return value
 
+    def validate_category(self, value):
+        category = Category.objects.all()
+        if value not in category:
+            raise serializers.ValidationError(
+                'Выбранная категория не входит в представленный список')
+        return value
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
+    title = serializers.SlugRelatedField(
+        slug_field='id',
+        queryset=Title.objects.all(),
+        required=False
+    )
     author = SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         read_only=True,
@@ -117,7 +128,7 @@ class ReviewSerializer(serializers.ModelSerializer):
    
     class Meta:
         model = Review
-        exclude = ('title',)
+        fields = '__all__'
 
         def validate(self, data):
             if self.context['request'].method == 'POST':

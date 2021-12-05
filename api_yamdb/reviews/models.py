@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -21,6 +22,7 @@ class User(AbstractUser):
             ('moderator', 'moderator'),
             ('admin', 'admin'),
             ('user', 'user')),
+        default='user',
         blank=True,
         null=True
     )
@@ -30,7 +32,7 @@ class User(AbstractUser):
         return self.username
 
 
-class Categories(models.Model):
+class Category(models.Model):
     name = models.CharField(max_length=20,
                             verbose_name='Категория',
                             unique=True)
@@ -57,11 +59,14 @@ class Title(models.Model):
     name = models.CharField(max_length=50,)
     year = models.IntegerField('Дата выпуска')
     description = models.TextField(max_length=200)
-    genre = models.ManyToManyField(Genre,
-                                   blank=True,
-                                   null=True)
+    genre = models.ManyToManyField(
+        Genre,
+        blank=True,
+        db_index=True,
+        related_name='titles'
+    )
     categories = models.ForeignKey(
-        Categories,
+        Category,
         on_delete=models.SET_NULL,
         blank=True,
         null=True
@@ -87,7 +92,13 @@ class Review(models.Model):
         db_index=True,
         null=False
     )
-    score = models.PositiveSmallIntegerField(null=False)
+    score = models.PositiveSmallIntegerField(
+        null=False,
+        validators=(
+            MinValueValidator(1, 'Минимум 1',),
+            MaxValueValidator(10, 'Максимум 10',)
+        ),
+    )
     pub_date = models.DateTimeField(
         'Дата публикации',
         auto_now_add=True,
