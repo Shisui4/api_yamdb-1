@@ -1,4 +1,5 @@
 import uuid
+from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
@@ -115,11 +116,35 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review"""
-    title = serializers.SlugRelatedField(
-        slug_field='id',
-        queryset=Title.objects.all(),
-        required=False
+   class CurrentTitleDafault:
+        requires_context = True
+
+    def __call__(self, serializer_field):
+        c_view = serializer_field.context['view']
+        title_id = c_view.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        return title
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    title = serializers.HiddenField(default=CurrentTitleDafault())
+    # title = serializers.SlugRelatedField(
+    #     slug_field='id',
+    #     required=False,
+    #     queryset=Titles.objects.all()
+    # )
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
     )
+
+    class Meta:
+        fields = '__all__'
+        model = Review
+      
     author = SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         read_only=True,
@@ -134,7 +159,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             if self.context['request'].method == 'POST':
                 user = self.context['request'].user
                 title_id = self.context['view'].kwargs.get('title_id')
-                if Review.objects.filter(author=user, title_id=title_id):
+                if Review.objects.filter(author=user, title_id=title_id).exists():
                     raise serializers.ValidationError(NOT_ALLOWED)
             return data
 
