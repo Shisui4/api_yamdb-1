@@ -3,10 +3,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+USER ='user'
+
 CHOICES = (
-        ('admin', 'admin'),
-        ('moderator', 'moderator'),
-        ('user', 'user'),
+        (ADMIN, 'admin'),
+        (MODERATOR, 'moderator'),
+        (USER, 'user'),
 )
 
 
@@ -26,9 +30,7 @@ class User(AbstractUser):
         'Статус пользователя',
         max_length=20,
         choices=CHOICES,
-        default='user',
-        blank=True,
-        null=True
+        default=USER
     )
     confirmation_code = models.CharField(max_length=255)
 
@@ -37,23 +39,24 @@ class User(AbstractUser):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=20,
-                            verbose_name='Категория',
-                            unique=True)
-    slug = models.SlugField(max_length=20,
-                            unique=True)
+    name = models.CharField(
+        'Категория',
+        max_length=20,
+        unique=True
+    )
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.slug
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=20,
-                            verbose_name='Жанр',
-                            unique=True)
-    slug = models.SlugField(max_length=20,
-                            unique=True,
-                            )
+    name = models.CharField(
+        'Жанр',
+        max_length=20,
+        unique=True
+    )
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.slug

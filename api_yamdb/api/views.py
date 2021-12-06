@@ -13,9 +13,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Category, Genre, Title, Review, User
 from .permissions import IsAdmin, IsModerator
-from .serializers import CommentSerializer, GenreSerializer, CategorySerializer
-from .serializers import AuthenticationSerializer, ReviewSerializer, UserSerializer
-from .serializers import TitleSerializer
+from .serializers import AuthenticationSerializer, CategorySerializer, CommentSerializer
+from .serializers import GenreSerializer, ReviewSerializer, ProfileSerializer
+from .serializers import TitleSerializer, SignUpSerializer, UserSerializer
 
 
 from_email = 'from@yamdb.com'
@@ -38,35 +38,35 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
-    def get_permissions(self):
-        if self.action == 'set_profile':
-            return (IsAuthenticated(),)
-        return super().get_permissions()
-
-    @action(methods=['get','patch'], detail=False, url_path='me')
+    @action(
+        methods=['get','patch'],
+        detail=False,
+        url_path='me',
+        permission_classes=[IsAuthenticated],
+        serializer_class=ProfileSerializer
+    )
     def set_profile(self, request, pk=None):
         user = get_object_or_404(User, pk=request.user.id)
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def sign_up(request):
-    serializer = UserSerializer(data=request.data)
+    serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
     username = serializer.validated_data['username']
     confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
     user, created = User.objects.get_or_create(**serializer.validated_data, confirmation_code=confirmation_code)
-    print(user.confirmation_code)
     send_mail(
         subject=subject,
         message=user.confirmation_code,
         from_email=from_email,
         recipient_list=[email])
-
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -81,8 +81,36 @@ def get_token(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
     refresh = RefreshToken.for_user(user)
     token = str(refresh.access_token)
-
     return Response({'token': token}, status=status.HTTP_200_OK)
+
+
+class GenreViewSet(ListCreateDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'slug'
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_fields = ('slug',)
+    search_fields = ('name',)
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
+        return super().get_permissions()
+
+
+class CategoryViewSet(ListCreateDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
+        return super().get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -91,10 +119,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (DjangoFilterBackend,)
-    filters_fields = ('category', 'genre__slug', 'name', 'slug')
+    filterset_fields = ('category', 'genre__slug', 'name', 'year')
 
     def get_permissions(self):
-        if self.action == 'list':
+        if self.action == 'list' or self.action == 'retrieve':
             return (AllowAny(),)
         return super().get_permissions()
 
@@ -129,35 +157,13 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(Review, id=review_id)
         return review.comments.all()
 
+    def get_permissions(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return (AllowAny(),)
+        return super().get_permissions()
+
     def perform_create(self, serializer):
         review_id = int(self.kwargs.get('review_id'))
         review = get_object_or_404(Review, id=review_id)
         user = self.request.user
         serializer.save(author=user, review=review)
-
-class GenreViewSet(ListCreateDestroyViewSet):
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdmin,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()
-
-
-class CategoryViewSet(ListCreateDestroyViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = (IsAdmin,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()

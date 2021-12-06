@@ -1,6 +1,4 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
-
-METHODS_FOR_MODERATOR = ('PATCH', 'DELETE',)
+from rest_framework.permissions import BasePermission
 
 
 class IsModerator(BasePermission):
@@ -9,9 +7,9 @@ class IsModerator(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (
-                request.user == obj.author
-                or request.user.role == 'moderator'
-                or request.user.role == 'admin'
+            request.user == obj.author
+            or request.user.role == 'moderator'
+            or request.user.role == 'admin'
         )
 
 
