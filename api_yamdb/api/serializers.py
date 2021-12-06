@@ -1,9 +1,11 @@
+import datetime as dt
 import uuid
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from reviews.models import Category, Comment, Genre, Review, Title, User, CHOICES
-import datetime as dt
+from reviews.models import Category, CHOICES, Comment, Genre
+from reviews.models import Review, Title, User
+
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
@@ -35,9 +37,11 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email = validated_data['email']
         confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_X500, email))
-        user = User.objects.create(**validated_data, confirmation_code=confirmation_code)
+        user = User.objects.create(
+            **validated_data,
+            confirmation_code=confirmation_code
+        )
         return user
-
 
     def validate_username(self, name):
         if name == 'me':
@@ -74,14 +78,14 @@ class SignUpSerializer(serializers.Serializer):
         ):
             raise serializers.ValidationError(USERNAME_EXISTS)
         if (
-            User.objects.filter(email=email).exists() and
-            User.objects.get(email=email).username != username
+            User.objects.filter(email=email).exists()
+            and User.objects.get(email=email).username != username
         ):
             raise serializers.ValidationError(EMAIL_EXISTS)
         return data
 
 
-class AuthenticationSerializer(serializers.Serializer):
+class AuthSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     confirmation_code = serializers.CharField(max_length=255)
 
@@ -132,7 +136,7 @@ class GenreField(serializers.SlugRelatedField):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategoryField(
         slug_field='slug', queryset=Category.objects.all()
-    )                            
+    )
     genre = GenreField(
         slug_field='slug', queryset=Genre.objects.all(), many=True
     )
@@ -162,6 +166,7 @@ class TitleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(INCORRECT_CATEGORY)
         return value
 
+
 class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.SlugRelatedField(
         slug_field='id',
@@ -173,7 +178,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-   
+
     class Meta:
         model = Review
         fields = '__all__'

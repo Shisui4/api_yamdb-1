@@ -44,23 +44,14 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 class GenreAdmin(admin.ModelAdmin):
-    list_display = (
-        'pk',
-        'name',
-        'slug'
-    )
+    list_display = ('pk', 'name', 'slug')
 
     list_editable = ('name', 'slug')
     search_fields = ('name', 'slug')
 
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        'pk',
-        'name',
-        'slug'
-    )
-
+    list_display = ('pk', 'name', 'slug')
     list_editable = ('name', 'slug')
     search_fields = ('name', 'slug')
 
@@ -76,6 +67,7 @@ class TitleAdmin(admin.ModelAdmin):
 
     list_editable = ('name', 'description', 'category', 'year')
     search_fields = ('name', 'year', 'genre', 'category')
+    empty_value_display = '-пусто-'
 
 
 admin.site.register(User, UserAdmin)
