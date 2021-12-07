@@ -3,6 +3,17 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+USER = 'user'
+
+CHOICES = (
+    (ADMIN, 'admin'),
+    (MODERATOR, 'moderator'),
+    (USER, 'user'),
+)
+
+
 class User(AbstractUser):
     first_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(
@@ -18,38 +29,45 @@ class User(AbstractUser):
     role = models.CharField(
         'Статус пользователя',
         max_length=20,
-        choices=(
-            ('moderator', 'moderator'),
-            ('admin', 'admin'),
-            ('user', 'user')),
-        default='user',
-        blank=True,
-        null=True
+        choices=CHOICES,
+        default=USER
     )
     confirmation_code = models.CharField(max_length=255)
+
+    @property
+    def is_admin(self):
+        return (
+            self.role == 'admin' or self.is_staff
+            or self.is_superuser
+        )
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
 
     def __str__(self):
         return self.username
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=20,
-                            verbose_name='Категория',
-                            unique=True)
-    slug = models.SlugField(max_length=20,
-                            unique=True)
+    name = models.CharField(
+        'Категория',
+        max_length=20,
+        unique=True
+    )
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.slug
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=20,
-                            verbose_name='Жанр',
-                            unique=True)
-    slug = models.SlugField(max_length=20,
-                            unique=True,
-                            )
+    name = models.CharField(
+        'Жанр',
+        max_length=20,
+        unique=True
+    )
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.slug
