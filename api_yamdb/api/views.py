@@ -15,7 +15,7 @@ from .permissions import IsAdmin, IsModerator
 from .serializers import AuthSerializer, CategorySerializer, CommentSerializer
 from .serializers import GenreSerializer, ReviewSerializer, ProfileSerializer
 from .serializers import TitleSerializer, SignUpSerializer, UserSerializer
-
+from .filters import TitleFilter
 
 from_email = 'from@yamdb.com'
 subject = 'confirmation code'
@@ -128,9 +128,8 @@ class TitleViewSet(viewsets.ModelViewSet):
         rating=Avg('reviews__score')).all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
-    filter_backends = (DjangoFilterBackend,)
-    #filter_class = TitleFilter
-    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = TitleFilter
 
     def get_permissions(self):
         if self.action == 'list' or self.action == 'retrieve':
