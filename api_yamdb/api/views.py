@@ -1,18 +1,19 @@
 import uuid
 
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny,IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 
 from reviews.models import Category, Genre, Title, Review, User
-from .permissions import IsAdmin, IsModerator
+from .permissions import IsAdmin, IsAmdinOrReadOnly, IsModerator
 from .serializers import CommentSerializer, GenreSerializer, CategorySerializer
 from .serializers import AuthenticationSerializer, ReviewSerializer, UserSerializer
 from .serializers import TitleSerializer
@@ -45,14 +46,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get','patch'], detail=False, url_path='me')
     def set_profile(self, request, pk=None):
-        user = request.user
-        if request.method == 'PATCH':
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user.set_profile(**serializer.validated_data)
-            user.save()
+        print(request.user.username)
+        user = get_object_or_404(User, pk=request.user.id)
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        if request.method == 'PATCH':
+            serializer = UserSerializer(data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -89,10 +91,10 @@ def get_token(request):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).all()
     serializer_class = TitleSerializer
-    lookup_field = 'slug'
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAmdinOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filters_fields = ('category', 'genre', 'name', 'slug')
 
@@ -137,6 +139,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(Review, id=review_id)
         user = self.request.user
         serializer.save(author=user, review=review)
+
+    def get_permissions(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return (AllowAny(),)
+        return super().get_permissions()
 
 class GenreViewSet(ListCreateDestroyViewSet):
     queryset = Genre.objects.all()

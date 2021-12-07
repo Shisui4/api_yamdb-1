@@ -65,7 +65,7 @@ class Title(models.Model):
         db_index=True,
         related_name='titles'
     )
-    categories = models.ForeignKey(
+    category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         blank=True,
