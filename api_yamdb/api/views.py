@@ -1,22 +1,22 @@
 import uuid
 
+from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Genre, Title, Review, User
+from reviews.models import Category, Genre, Review, Title, User
 from .filters import TitleFilter
 from .permissions import IsAdmin, IsModerator
-from .serializers import AuthSerializer, CategorySerializer, CommentSerializer
-from .serializers import GenreSerializer, ReviewSerializer, ProfileSerializer
-from .serializers import TitleSerializer, SignUpSerializer, UserSerializer
-
+from .serializers import (AuthSerializer, CategorySerializer,
+                          CommentSerializer, GenreSerializer,
+                          ProfileSerializer, ReviewSerializer,
+                          SignUpSerializer, TitleSerializer, UserSerializer)
 
 from_email = 'from@yamdb.com'
 subject = 'confirmation code'
@@ -121,7 +121,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (DjangoFilterBackend,)
-    filter_class = TitleFilter
+    filterset_class = TitleFilter
 
     def get_permissions(self):
         if self.action == 'list' or self.action == 'retrieve':
