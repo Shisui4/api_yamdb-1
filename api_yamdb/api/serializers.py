@@ -184,15 +184,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = '__all__'
 
-        def validate(self, data):
-            if self.context['request'].method == 'POST':
-                user = self.context['request'].user
-                title_id = self.context['view'].kwargs.get('title_id')
-                if Review.objects.filter(
-                    author_id=user.id, title_id=title_id
-                ).exists():
+    def validate(self, data):
+        if self.context['request'].method == 'POST':
+            user = self.context['request'].user
+            title = self.context['view'].kwargs.get('title_id')
+            if Review.objects.filter(
+                title=title, author=user
+            ).exists():
                     raise serializers.ValidationError(NOT_ALLOWED)
-            return data
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):

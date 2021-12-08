@@ -1,6 +1,6 @@
 import csv, sqlite3
 
-con = sqlite3.connect('api_yamdb/api_yamdb/db.sqlite3.db')
+con = sqlite3.connect('api_yamdb/api_yamdb/db.sqlite3')
 cur = con.cursor()
 cur.execute("""CREATE TABLE category (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

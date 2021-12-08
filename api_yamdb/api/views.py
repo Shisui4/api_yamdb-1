@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 
 from reviews.models import Category, Genre, Title, Review, User
-from .permissions import IsAdmin, IsModerator
+from .permissions import IsAdmin, IsAmdinOrReadOnly, IsModerator
 from .serializers import AuthSerializer, CategorySerializer, CommentSerializer
 from .serializers import GenreSerializer, ReviewSerializer, ProfileSerializer
 from .serializers import TitleSerializer, SignUpSerializer, UserSerializer
@@ -116,12 +116,12 @@ class CategoryViewSet(ListCreateDestroyViewSet):
         return super().get_permissions()
 
 
-"""class TitleFilter(FilterSet): 
+class TitleFilter(FilterSet): 
     genre = ModelMultipleChoiceFilter(queryset=Title.objects.all())
 
     class Meta:
         model = Title
-        fields = ('genre', )"""
+        fields = ('genre', )
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -179,38 +179,3 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(Review, id=review_id)
         user = self.request.user
         serializer.save(author=user, review=review)
-<<<<<<< HEAD
-
-    def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
-            return (AllowAny(),)
-        return super().get_permissions()
-
-class GenreViewSet(ListCreateDestroyViewSet):
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdmin,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()
-
-
-class CategoryViewSet(ListCreateDestroyViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = (IsAdmin,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()
-=======
->>>>>>> 0da6334121b43f9276e8f90babf0b1d85e555e58
