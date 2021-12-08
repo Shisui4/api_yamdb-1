@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from reviews.models import Category, CHOICES, Comment, Genre
-from reviews.models import Review, Title, User
 
+from reviews.models import (CHOICES, Category, Comment, Genre, Review, Title,
+                            User)
 
 NOT_ALLOWED = 'Отзыв уже оставлен.'
 FORBIDDEN_NAME = 'Это имя не может быть использовано!'
@@ -187,11 +187,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if self.context['request'].method == 'POST':
             user = self.context['request'].user
-            title = self.context['view'].kwargs.get('title_id')
+            title_id = self.context['view'].kwargs.get('title_id')
             if Review.objects.filter(
-                title=title, author=user
+                author_id=user.id, title_id=title_id
             ).exists():
-                    raise serializers.ValidationError(NOT_ALLOWED)
+                raise serializers.ValidationError(NOT_ALLOWED)
         return data
 
 
