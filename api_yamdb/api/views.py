@@ -13,7 +13,7 @@ from rest_framework.pagination import PageNumberPagination
 
 from reviews.models import Category, Genre, Review, Title, User
 from .filters import TitleFilter
-from .permissions import IsAdmin, IsModerator
+from .permissions import IsAdmin, IsAmdinOrReadOnly, IsModerator
 from .serializers import (AuthSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           ProfileSerializer, ReviewSerializer,

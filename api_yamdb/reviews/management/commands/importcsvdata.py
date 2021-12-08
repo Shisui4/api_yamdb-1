@@ -1,12 +1,23 @@
 import csv
 
+import logging
+
 from django.core.management.base import BaseCommand, CommandError
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
+logging.basicConfig(
+    level=logging.INFO,
+    filename='main.log',
+    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s',
+    filemode='w',
+    encoding='utf-8'
+)
+
+
 CSV_PATH = 'static/data/'
 
-foreign_key_fields = ('category', 'author')
+foreign_key_fields = ('category', 'author',)
 
 DICT = {
     User: 'users.csv',
@@ -43,4 +54,4 @@ class Command(BaseCommand):
                     CSVSerializer(csv.DictReader(csv_file), model)
             except Exception as error:
                 CommandError(error)
-        self.stdout.write('Successfully loaded all data into database')
+        logging.info('Successfully loaded all data into database')
