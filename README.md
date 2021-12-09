@@ -38,7 +38,8 @@ python3 manage.py migrate
 ```
 python3 manage.py runserver
 ```
-Примеры
+### Примеры
+
 Список доступных эндпоинтов:
 ```
 api/v1/auth/signup/ - Авторизация
