@@ -2,14 +2,15 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
 
 CHOICES = (
-    (ADMIN, 'admin'),
-    (MODERATOR, 'moderator'),
-    (USER, 'user'),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+    (USER, USER),
 )
 
 
@@ -36,13 +37,13 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return (
-            self.role == 'admin' or self.is_staff
+            self.role == ADMIN or self.is_staff
             or self.is_superuser
         )
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == MODERATOR
 
     def __str__(self):
         return self.username
@@ -51,10 +52,14 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(
         'Категория',
-        max_length=20,
+        max_length=150,
         unique=True
     )
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(
+        'Cлаг',
+        max_length=50,
+        unique=True
+    )
 
     def __str__(self):
         return self.slug
@@ -63,30 +68,36 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.CharField(
         'Жанр',
-        max_length=20,
+        max_length=150,
         unique=True
     )
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(
+        'Слаг',
+        max_length=50,
+        unique=True
+    )
 
     def __str__(self):
         return self.slug
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=50,)
+    name = models.CharField('Название произведения', max_length=200)
     year = models.IntegerField('Дата выпуска')
-    description = models.TextField(max_length=200)
+    description = models.TextField('Описание')
     genre = models.ManyToManyField(
         Genre,
         blank=True,
         db_index=True,
-        related_name='titles'
+        related_name='titles',
+        verbose_name='Жанр'
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         blank=True,
-        null=True
+        null=True,
+        verbose_name='Категория'
     )
 
     def __str__(self):
@@ -98,18 +109,21 @@ class Review(models.Model):
         Title,
         on_delete=models.CASCADE,
         related_name='reviews',
+        verbose_name='Произведение',
         db_index=True,
         null=False
     )
-    text = models.TextField()
+    text = models.TextField('Содержание отзыва')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews',
+        verbose_name='Автор отзыва',
         db_index=True,
         null=False
     )
     score = models.PositiveSmallIntegerField(
+        'Оценка',
         null=False,
         validators=(
             MinValueValidator(1, 'Минимум 1',),
@@ -139,6 +153,7 @@ class Comment(models.Model):
         Review,
         on_delete=models.CASCADE,
         related_name='comments',
+        verbose_name='Произведение',
         db_index=True,
         null=False
     )
@@ -147,6 +162,7 @@ class Comment(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='comments',
+        verbose_name='Автор комментария',
         db_index=True,
         null=False
     )

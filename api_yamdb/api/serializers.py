@@ -3,22 +3,22 @@ import uuid
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-
 from reviews.models import (CHOICES, Category, Comment, Genre, Review, Title,
                             User)
 
-NOT_ALLOWED = 'Отзыв уже оставлен.'
-FORBIDDEN_NAME = 'Это имя не может быть использовано!'
-INCORRECT_RELEASE_YEAR = 'Год не может быть больше текущего'
-INCORRECT_GENRE = 'Жанр не входит в представленный список'
-INCORRECT_CATEGORY = 'Категория не входит в представленный список'
-MISSING_EMAIL = 'Для авторизации требуется ввести электронную почту'
-MISSING_USERNAME = 'Для аутентификации требуется ввести имя пользователя'
-MISSING_CODE = 'Для аутентификации требуется ввести код подтверждения'
-USERNAME_EXISTS = 'Пользователь с таким именем уже существует'
-EMAIL_EXISTS = 'Этот адрес электронной почты уже зарегестрирован'
-from_email = 'from@yamdb.com'
-subject = 'confirmation code'
+
+class ErrorResponse:
+
+    NOT_ALLOWED = 'Отзыв уже оставлен.'
+    FORBIDDEN_NAME = 'Это имя не может быть использовано!'
+    INCORRECT_RELEASE_YEAR = 'Год не может быть больше текущего'
+    INCORRECT_GENRE = 'Жанр не входит в представленный список'
+    INCORRECT_CATEGORY = 'Категория не входит в представленный список'
+    MISSING_EMAIL = 'Для авторизации требуется ввести электронную почту'
+    MISSING_USERNAME = 'Для аутентификации требуется ввести имя пользователя'
+    MISSING_CODE = 'Для аутентификации требуется ввести код подтверждения'
+    USERNAME_EXISTS = 'Пользователь с таким именем уже существует'
+    EMAIL_EXISTS = 'Этот адрес электронной почты уже зарегестрирован'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -45,14 +45,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, name):
         if name == 'me':
-            raise serializers.ValidationError(FORBIDDEN_NAME)
+            raise serializers.ValidationError(ErrorResponse.FORBIDDEN_NAME)
         elif name is None or name == "":
-            raise serializers.ValidationError(MISSING_USERNAME)
+            raise serializers.ValidationError(ErrorResponse.MISSING_USERNAME)
         return name
 
     def validate_email(self, email):
         if email is None or email == "":
-            raise serializers.ValidationError(MISSING_EMAIL)
+            raise serializers.ValidationError(ErrorResponse.MISSING_EMAIL)
         return email
 
 
@@ -66,7 +66,7 @@ class SignUpSerializer(serializers.Serializer):
 
     def validate_username(self, name):
         if name == 'me':
-            raise serializers.ValidationError(FORBIDDEN_NAME)
+            raise serializers.ValidationError(ErrorResponse.FORBIDDEN_NAME)
         return name
 
     def validate(self, data):
@@ -76,12 +76,12 @@ class SignUpSerializer(serializers.Serializer):
             User.objects.filter(username=username).exists()
             and User.objects.get(username=username).email != email
         ):
-            raise serializers.ValidationError(USERNAME_EXISTS)
+            raise serializers.ValidationError(ErrorResponse.USERNAME_EXISTS)
         if (
             User.objects.filter(email=email).exists()
             and User.objects.get(email=email).username != username
         ):
-            raise serializers.ValidationError(EMAIL_EXISTS)
+            raise serializers.ValidationError(ErrorResponse.EMAIL_EXISTS)
         return data
 
 
@@ -93,9 +93,9 @@ class AuthSerializer(serializers.Serializer):
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
         if username is None:
-            raise serializers.ValidationError(MISSING_USERNAME)
+            raise serializers.ValidationError(ErrorResponse.MISSING_USERNAME)
         if confirmation_code is None:
-            raise serializers.ValidationError(MISSING_CODE)
+            raise serializers.ValidationError(ErrorResponse.MISSING_CODE)
         return data
 
 
@@ -150,20 +150,24 @@ class TitleSerializer(serializers.ModelSerializer):
     def validate_year(self, value):
         year = dt.date.today().year
         if year < value:
-            raise serializers.ValidationError(INCORRECT_RELEASE_YEAR)
+            raise serializers.ValidationError(
+                ErrorResponse.INCORRECT_RELEASE_YEAR
+            )
         return value
 
     def validate_genre(self, value):
         genre = Genre.objects.all()
         for item in value:
             if item not in genre:
-                raise serializers.ValidationError(INCORRECT_GENRE)
+                raise serializers.ValidationError(
+                    ErrorResponse.INCORRECT_GENRE
+                )
         return value
 
     def validate_category(self, value):
         category = Category.objects.all()
         if value not in category:
-            raise serializers.ValidationError(INCORRECT_CATEGORY)
+            raise serializers.ValidationError(ErrorResponse.INCORRECT_CATEGORY)
         return value
 
 
@@ -190,7 +194,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             if Review.objects.filter(
                 author_id=user.id, title_id=title_id
             ).exists():
-                raise serializers.ValidationError(NOT_ALLOWED)
+                raise serializers.ValidationError(ErrorResponse.NOT_ALLOWED)
         return data
 
 
